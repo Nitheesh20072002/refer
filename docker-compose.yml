@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: referloop_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: referloop
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - referloop-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Go Backend API
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: referloop_api
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: referloop
+      PORT: 8000
+      GIN_MODE: debug
+      JWT_SECRET: your-super-secret-jwt-key-change-this
+      FRONTEND_URL: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - referloop-network
+    volumes:
+      - ./backend:/app
+
+  # pgAdmin (Optional - Database UI)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: referloop_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@referloop.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - referloop-network
+
+networks:
+  referloop-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
