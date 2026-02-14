@@ -1,33 +1,19 @@
-# Build stage
-FROM node:18-alpine AS builder
-
-WORKDIR /app
-
-# Copy package files
-COPY package.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy source code
-COPY . .
-
-# Build Next.js app
-RUN npm run build
-
-# Production stage
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy everything from builder
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/node_modules ./node_modules
-COPY package.json ./
+# Copy package files first (better caching)
+COPY package*.json ./
 
-# Expose port
+# Install dependencies inside container
+RUN npm install
+
+# Copy rest of source code
+COPY . .
+
+# Build inside container
+RUN npm run build
+
 EXPOSE 3000
 
-# Start the application
-CMD ["npm", "start"]
+CMD ["npx", "next", "start"]
