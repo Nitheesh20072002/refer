@@ -61,6 +61,21 @@ services:
     networks:
       - referloop-network
 
+  pgweb:
+    image: sosedoff/pgweb:latest
+    container_name: referloop_pgweb
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      # Use the newer variable name
+      - PGWEB_DATABASE_URL=postgres://postgres:postgres@postgres:5432/referloop?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - referloop-network
+
 networks:
   referloop-network:
     driver: bridge
