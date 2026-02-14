@@ -82,7 +82,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
       if (!response.ok) throw new Error('Signup failed')
 
-      const data = await response.json()
+      await response.json()
       set({ isLoading: false })
     } catch (error) {
       set({

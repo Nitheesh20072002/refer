@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { useAuthStore } from '@/lib/store'
@@ -14,11 +14,11 @@ interface SignupForm {
   role: 'job_seeker' | 'referrer'
 }
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { signup, isLoading, error } = useAuthStore()
-  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<SignupForm>({
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm<SignupForm>({
     defaultValues: {
       role: (searchParams.get('role') as 'job_seeker' | 'referrer') || 'job_seeker',
     },
@@ -136,5 +136,13 @@ export default function SignupPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div>Loading...</div></div>}>
+      <SignupForm />
+    </Suspense>
   )
 }

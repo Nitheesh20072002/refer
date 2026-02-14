@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  # Nginx Reverse Proxy (The Entry Point)
+  nginx:
+    image: nginx:alpine
+    container_name: referloop_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - api
+    networks:
+      - referloop-network
+
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
@@ -9,8 +23,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: referloop
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -23,41 +35,44 @@ services:
 
   # Go Backend API
   api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    build: ./backend
     container_name: referloop_api
-    ports:
-      - "8000:8000"
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_NAME: referloop
-      PORT: 8000
-      GIN_MODE: debug
-      JWT_SECRET: your-super-secret-jwt-key-change-this
-      FRONTEND_URL: http://localhost:3000
+      GIN_MODE: release # Set to release for production
+      JWT_SECRET: your-super-secret-key
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - referloop-network
-    volumes:
-      - ./backend:/app
 
-  # pgAdmin (Optional - Database UI)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: referloop_pgadmin
+  # Next.js Frontend
+  frontend:
+    build: ./frontend
+    container_name: referloop_frontend
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@referloop.local
-      PGADMIN_DEFAULT_PASSWORD: admin
+      # Browser calls this (Nginx will route /api to the 'api' container)
+      NEXT_PUBLIC_API_URL: /api 
+    networks:
+      - referloop-network
+
+  pgweb:
+    image: sosedoff/pgweb:latest
+    container_name: referloop_pgweb
+    restart: always
     ports:
-      - "5050:80"
+      - "8081:8081"
+    environment:
+      # Use the newer variable name
+      - PGWEB_DATABASE_URL=postgres://postgres:postgres@postgres:5432/referloop?sslmode=disable
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - referloop-network
 

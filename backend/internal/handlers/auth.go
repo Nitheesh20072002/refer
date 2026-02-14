@@ -7,6 +7,7 @@ import (
 
 	"backend/internal/config"
 	"backend/internal/models"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -159,7 +160,7 @@ func VerifyEmail(c *gin.Context) {
 	// Mark user as verified
 	now := time.Now()
 	db.Model(&verifToken).Update("used_at", now)
-	db.Model(&models.User{}, verifToken.UserID).Update("is_verified", true)
+	db.Model(&models.User{ID: verifToken.UserID}).Update("is_verified", true)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully"})
 }

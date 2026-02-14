@@ -6,6 +6,7 @@ import (
 
 	"backend/internal/config"
 	"backend/internal/models"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -217,7 +218,7 @@ func ConfirmReferral(c *gin.Context) {
 		db.Create(&reward)
 
 		// Update user's reward points
-		db.Model(&models.User{}, referral.ReferrerID).Update("reward_points", gorm.Expr("reward_points + ?", 100))
+		db.Model(&models.User{ID: referral.ReferrerID}).Update("reward_points", gorm.Expr("reward_points + ?", 100))
 
 		// Close the request
 		referral.Request.Status = models.StatusClosed

@@ -5,6 +5,7 @@ import (
 
 	"backend/internal/config"
 	"backend/internal/models"
+
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -57,7 +58,7 @@ func AdminVerifyReferral(c *gin.Context) {
 			Description: "Admin verified referral",
 		}
 		db.Create(&newReward)
-		db.Model(&models.User{}, referral.ReferrerID).Update("reward_points", gorm.Expr("reward_points + ?", 100))
+		db.Model(&models.User{ID: referral.ReferrerID}).Update("reward_points", gorm.Expr("reward_points + ?", 100))
 	}
 
 	if err := db.Save(&referral).Error; err != nil {
