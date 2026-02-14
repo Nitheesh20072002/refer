@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  # Nginx Reverse Proxy (The Entry Point)
+  nginx:
+    image: nginx:alpine
+    container_name: referloop_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend
+      - api
+    networks:
+      - referloop-network
+
   # PostgreSQL Database
   postgres:
     image: postgres:15-alpine
@@ -9,8 +23,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: referloop
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -23,59 +35,29 @@ services:
 
   # Go Backend API
   api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    build: ./backend
     container_name: referloop_api
-    ports:
-      - "8000:8000"
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_NAME: referloop
-      PORT: 8000
-      GIN_MODE: debug
-      JWT_SECRET: your-super-secret-jwt-key-change-this
-      FRONTEND_URL: http://localhost:3000
+      GIN_MODE: release # Set to release for production
+      JWT_SECRET: your-super-secret-key
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - referloop-network
-    volumes:
-      - ./backend:/app
 
   # Next.js Frontend
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    build: ./frontend
     container_name: referloop_frontend
-    ports:
-      - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000/api
-    depends_on:
-      - api
-    networks:
-      - referloop-network
-    volumes:
-      - ./frontend:/app
-      - /app/.next
-
-  # pgAdmin (Optional - Database UI)
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: referloop_pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@gmail.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
-    depends_on:
-      - postgres
+      # Browser calls this (Nginx will route /api to the 'api' container)
+      NEXT_PUBLIC_API_URL: /api 
     networks:
       - referloop-network
 
