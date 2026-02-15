@@ -26,6 +26,8 @@ interface AuthStore {
   logout: () => void
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL
+
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   token: typeof window !== 'undefined' ? localStorage.getItem('token') : null,
@@ -47,7 +49,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   login: async (email: string, password: string) => {
     set({ isLoading: true, error: null })
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`, {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -74,7 +76,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   signup: async (formData: any) => {
     set({ isLoading: true, error: null })
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`, {
+      const response = await fetch(`${API_BASE}/api/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
