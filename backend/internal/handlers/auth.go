@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"time"
 
 	"backend/internal/config"
 	"backend/internal/models"
+	"backend/internal/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -80,7 +82,18 @@ func Signup(c *gin.Context) {
 	}
 	db.Create(&verificationToken)
 
-	// TODO: Send verification email
+	// Send verification email
+	emailService := services.NewEmailService()
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+	verificationURL := fmt.Sprintf("%s/auth/verify-email?token=%s", baseURL, token)
+
+	if err := emailService.SendVerificationEmail(user.Email, user.FirstName, token, verificationURL); err != nil {
+		// Log the error but don't fail the signup
+		fmt.Printf("Failed to send verification email: %v\n", err)
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "User created. Check your email for verification link.",
@@ -162,6 +175,15 @@ func VerifyEmail(c *gin.Context) {
 	db.Model(&verifToken).Update("used_at", now)
 	db.Model(&models.User{ID: verifToken.UserID}).Update("is_verified", true)
 
+	// Send welcome email
+	var user models.User
+	db.First(&user, verifToken.UserID)
+	emailService := services.NewEmailService()
+	if err := emailService.SendWelcomeEmail(user.Email, user.FirstName, string(user.Role)); err != nil {
+		// Log the error but don't fail the verification
+		fmt.Printf("Failed to send welcome email: %v\n", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully"})
 }
 
@@ -199,7 +221,18 @@ func ResendVerification(c *gin.Context) {
 	}
 	db.Create(&verificationToken)
 
-	// TODO: Send verification email
+	// Send verification email
+	emailService := services.NewEmailService()
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+	verificationURL := fmt.Sprintf("%s/auth/verify-email?token=%s", baseURL, token)
+
+	if err := emailService.SendVerificationEmail(user.Email, user.FirstName, token, verificationURL); err != nil {
+		// Log the error but don't fail the resend
+		fmt.Printf("Failed to send verification email: %v\n", err)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Verification link sent to your email"})
 }
