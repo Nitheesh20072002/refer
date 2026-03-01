@@ -10,6 +10,7 @@ import { AlertCircle, ArrowRight, Mail, Lock, User, Loader2, Building2 } from "l
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useAuth } from "@/lib/auth-context"
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -18,12 +19,13 @@ export default function SignupPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "job_seeker",
+    role: "job_seeker" as "job_seeker" | "referrer",
     company: "",
     agreeToTerms: false,
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const { signup } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,11 +45,20 @@ export default function SignupPage() {
       return
     }
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await signup({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        role: formData.role,
+        company: formData.company,
+      })
+      // Redirect is handled by the signup function
+    } catch (err) {
+      setError("Failed to create account. Please try again.")
       setIsLoading(false)
-      console.log("Signup attempt:", formData)
-    }, 1500)
+    }
   }
 
   const handleInputChange = (field: string, value: string | boolean) => {

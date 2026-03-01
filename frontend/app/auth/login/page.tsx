@@ -8,24 +8,27 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, ArrowRight, Mail, Lock, Loader2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useAuth } from "@/lib/auth-context"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
 
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await login(email, password)
+      // Redirect is handled by the login function
+    } catch (err) {
+      setError("Invalid email or password. Please try again.")
       setIsLoading(false)
-      // Add your login logic here
-      console.log("Login attempt:", { email, password })
-    }, 1500)
+    }
   }
 
   return (

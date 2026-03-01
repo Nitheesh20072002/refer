@@ -7,6 +7,7 @@ import { ReferrerCards } from "@/components/dashboard/referrer-cards"
 import { ReferralChart } from "@/components/dashboard/referral-chart"
 import { RecentActivity } from "@/components/dashboard/recent-activity"
 import { SidebarProvider, useSidebarState } from "@/components/dashboard/sidebar-context"
+import { ProtectedRoute } from "@/components/protected-route"
 
 function DashboardContent() {
   const { collapsed } = useSidebarState()
@@ -48,8 +49,10 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <SidebarProvider>
-      <DashboardContent />
-    </SidebarProvider>
+    <ProtectedRoute>
+      <SidebarProvider>
+        <DashboardContent />
+      </SidebarProvider>
+    </ProtectedRoute>
   )
 }

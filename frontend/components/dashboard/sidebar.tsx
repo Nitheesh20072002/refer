@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { useSidebarState } from "./sidebar-context"
+import { useAuth } from "@/lib/auth-context"
 
 const mainNav = [
   { label: "Dashboard", icon: LayoutDashboard, active: true },
@@ -30,6 +31,7 @@ const bottomNav = [
 
 export function DashboardSidebar() {
   const { collapsed, toggle } = useSidebarState()
+  const { logout } = useAuth()
 
   return (
     <aside
@@ -84,7 +86,10 @@ export function DashboardSidebar() {
             </li>
           ))}
           <li>
-            <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground">
+            <button
+              onClick={logout}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+            >
               <LogOut className="size-5 shrink-0" />
               {!collapsed && <span>Log Out</span>}
             </button>
