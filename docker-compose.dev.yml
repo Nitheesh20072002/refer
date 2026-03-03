@@ -46,6 +46,9 @@ services:
       SMTP_FROM: noreply@referloop.com
       SMTP_TLS: "false"
       
+      # Frontend URL (for email links)
+      FRONTEND_URL: http://localhost:8080
+      
       # Development mode
       GIN_MODE: debug
       ENVIRONMENT: development
