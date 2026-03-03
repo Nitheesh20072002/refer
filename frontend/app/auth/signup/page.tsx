@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, ArrowRight, Mail, Lock, User, Loader2, Building2 } from "lucide-react"
+import { AlertCircle, ArrowRight, Mail, Lock, User, Loader2, Building2, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAuth } from "@/lib/auth-context"
+import { apiClient } from "@/lib/api-client"
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -25,6 +26,7 @@ export default function SignupPage() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [isSuccess, setIsSuccess] = useState(false)
   const { signup } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,25 +48,114 @@ export default function SignupPage() {
     }
 
     try {
-      await signup({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+      // Call API directly instead of using auth context to prevent auto-redirect
+      await apiClient.signup({
         email: formData.email,
         password: formData.password,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
         role: formData.role,
-        company: formData.company,
       })
-      // Redirect is handled by the signup function
+      
+      // Show success message instead of redirecting
+      setIsSuccess(true)
     } catch (err) {
       // Display the actual error message from the API
       const errorMessage = err instanceof Error ? err.message : "Failed to create account. Please try again."
       setError(errorMessage)
+    } finally {
       setIsLoading(false)
     }
   }
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  // Show success state
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
+        <div className="w-full max-w-md">
+          {/* Logo and Title */}
+          <div className="text-center mb-8">
+            <Link href="/" className="inline-block mb-4">
+              <div className="flex items-center justify-center gap-2">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                  <span className="text-2xl font-bold text-primary-foreground">R</span>
+                </div>
+                <span className="text-2xl font-heading font-bold text-foreground">ReferLoop</span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Success Card */}
+          <Card className="shadow-lg border-border">
+            <CardHeader className="space-y-1 text-center">
+              <div className="mx-auto mb-4 w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <CardTitle className="text-2xl font-heading">Check your email!</CardTitle>
+              <CardDescription>
+                We've sent a verification link to <strong>{formData.email}</strong>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <div className="flex items-start gap-2">
+                  <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />
+                  <div className="flex-1 space-y-1">
+                    <p className="text-sm font-medium">What's next?</p>
+                    <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                      <li>Check your email inbox</li>
+                      <li>Click the verification link</li>
+                      <li>Come back and log in</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  Can't find the email? Check your spam folder. The link expires in 24 hours.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+            <CardFooter className="flex flex-col space-y-2">
+              <Link href="/auth/login" className="w-full">
+                <Button className="w-full" size="lg">
+                  Go to login
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => setIsSuccess(false)}
+              >
+                Sign up with a different email
+              </Button>
+            </CardFooter>
+          </Card>
+
+          {/* Footer Links */}
+          <div className="mt-8 text-center text-sm text-muted-foreground">
+            <Link href="/terms" className="hover:text-foreground underline underline-offset-4">
+              Terms
+            </Link>
+            {" · "}
+            <Link href="/privacy" className="hover:text-foreground underline underline-offset-4">
+              Privacy
+            </Link>
+            {" · "}
+            <Link href="/help" className="hover:text-foreground underline underline-offset-4">
+              Help
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
