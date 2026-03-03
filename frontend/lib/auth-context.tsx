@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { apiClient } from './api-client'
 
 interface User {
   id: string
@@ -36,64 +37,97 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
-  // Load user from localStorage on mount
+  // Load user from localStorage and validate token on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user')
-    if (storedUser) {
+    const loadUser = async () => {
       try {
-        setUser(JSON.parse(storedUser))
+        const storedUser = localStorage.getItem('user')
+        const token = apiClient.getToken()
+        
+        if (storedUser && token) {
+          try {
+            // Validate token by fetching profile
+            const profile = await apiClient.getProfile()
+            const validatedUser: User = {
+              id: profile.id.toString(),
+              email: profile.email,
+              firstName: profile.first_name,
+              lastName: profile.last_name,
+              role: profile.role as 'job_seeker' | 'referrer',
+            }
+            setUser(validatedUser)
+            localStorage.setItem('user', JSON.stringify(validatedUser))
+          } catch (error) {
+            // Token is invalid or expired - clear everything
+            console.log('Token validation failed, clearing auth state')
+            apiClient.setToken(null)
+            localStorage.removeItem('user')
+            setUser(null)
+          }
+        }
       } catch (error) {
-        console.error('Error parsing stored user:', error)
-        localStorage.removeItem('user')
+        // Catch any localStorage errors (e.g., in private browsing mode)
+        console.error('Error loading user:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
-    setIsLoading(false)
+
+    loadUser()
   }, [])
 
   const login = async (email: string, password: string) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      const response = await apiClient.login(email, password)
+      
+      // Store token
+      apiClient.setToken(response.token)
+      
+      // Create user object
+      const newUser: User = {
+        id: response.user.id.toString(),
+        email: response.user.email,
+        firstName: response.user.first_name,
+        lastName: response.user.last_name,
+        role: response.user.role as 'job_seeker' | 'referrer',
+      }
 
-    // In a real app, you would validate credentials with your backend
-    // For now, we'll create a mock user
-    const mockUser: User = {
-      id: '1',
-      email,
-      firstName: email.split('@')[0],
-      lastName: 'User',
-      role: 'job_seeker',
+      setUser(newUser)
+      localStorage.setItem('user', JSON.stringify(newUser))
+      
+      // Redirect to dashboard
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('Login error:', error)
+      throw error
     }
-
-    setUser(mockUser)
-    localStorage.setItem('user', JSON.stringify(mockUser))
-    
-    // Redirect to dashboard
-    router.push('/dashboard')
   }
 
   const signup = async (data: SignupData) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    try {
+      const response = await apiClient.signup({
+        email: data.email,
+        password: data.password,
+        first_name: data.firstName,
+        last_name: data.lastName,
+        role: data.role,
+      })
 
-    // In a real app, you would send this to your backend
-    const newUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      role: data.role,
-      company: data.company,
+      // Show success message or redirect to verification page
+      console.log('Signup successful:', response.message)
+      
+      // For now, redirect to login page
+      // You might want to show a "Check your email" message instead
+      router.push('/auth/login?message=Please check your email to verify your account')
+    } catch (error) {
+      console.error('Signup error:', error)
+      throw error
     }
-
-    setUser(newUser)
-    localStorage.setItem('user', JSON.stringify(newUser))
-    
-    // Redirect to dashboard
-    router.push('/dashboard')
   }
 
   const logout = () => {
     setUser(null)
+    apiClient.setToken(null)
     localStorage.removeItem('user')
     router.push('/')
   }

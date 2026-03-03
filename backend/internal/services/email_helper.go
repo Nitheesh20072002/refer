@@ -38,3 +38,8 @@ func (eh *EmailHelper) SendRewardNotification(email, firstName string, pointsEar
 func (eh *EmailHelper) SendWelcomeEmail(email, firstName, role string) error {
 	return eh.service.SendWelcomeEmail(email, firstName, role)
 }
+
+// SendLoginNotification is a helper to send login notification emails
+func (eh *EmailHelper) SendLoginNotification(email, firstName, loginTime, ipAddress, userAgent string) error {
+	return eh.service.SendLoginNotificationEmail(email, firstName, loginTime, ipAddress, userAgent)
+}

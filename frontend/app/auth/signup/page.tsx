@@ -56,7 +56,9 @@ export default function SignupPage() {
       })
       // Redirect is handled by the signup function
     } catch (err) {
-      setError("Failed to create account. Please try again.")
+      // Display the actual error message from the API
+      const errorMessage = err instanceof Error ? err.message : "Failed to create account. Please try again."
+      setError(errorMessage)
       setIsLoading(false)
     }
   }

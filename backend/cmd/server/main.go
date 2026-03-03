@@ -7,6 +7,7 @@ import (
 	"backend/internal/config"
 	"backend/internal/handlers"
 	"backend/internal/middleware"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,6 +42,8 @@ func main() {
 		auth.POST("/login", handlers.Login)
 		auth.POST("/verify-email", handlers.VerifyEmail)
 		auth.POST("/resend-verification", handlers.ResendVerification)
+		auth.POST("/forgot-password", handlers.ForgotPassword)
+		auth.POST("/reset-password", handlers.ResetPassword)
 	}
 
 	// User routes (auth required)

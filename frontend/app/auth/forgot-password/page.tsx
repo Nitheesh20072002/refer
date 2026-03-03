@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, ArrowRight, Mail, Loader2, CheckCircle2, ArrowLeft } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { apiClient } from "@/lib/api-client"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -20,12 +21,14 @@ export default function ForgotPasswordPage() {
     setIsLoading(true)
     setError("")
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      await apiClient.forgotPassword(email)
       setIsSubmitted(true)
-      console.log("Password reset request for:", email)
-    }, 1500)
+    } catch (err: any) {
+      setError(err.message || "An error occurred. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   if (isSubmitted) {

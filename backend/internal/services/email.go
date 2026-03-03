@@ -451,6 +451,86 @@ func (es *EmailService) SendRewardNotificationEmail(email, firstName string, poi
 	return es.Send(message)
 }
 
+// SendLoginNotificationEmail sends a notification when user logs in
+func (es *EmailService) SendLoginNotificationEmail(email, firstName, loginTime, ipAddress, userAgent string) error {
+	subject := "New Login to Your ReferLoop Account"
+
+	htmlBody := fmt.Sprintf(`
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Notification</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
+        .content { background-color: #f9fafb; padding: 20px; border-radius: 8px; }
+        .info-box { background-color: #e5e7eb; padding: 15px; border-radius: 5px; margin: 15px 0; }
+        .info-row { margin: 8px 0; }
+        .info-label { font-weight: bold; color: #666; }
+        .warning { background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px; margin: 15px 0; }
+        .button { 
+            display: inline-block; 
+            padding: 12px 30px; 
+            background-color: #ef4444; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            margin: 15px 0;
+        }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">ReferLoop</div>
+        </div>
+        <div class="content">
+            <p>Hello %s,</p>
+            <p>We detected a new login to your ReferLoop account:</p>
+            <div class="info-box">
+                <div class="info-row">
+                    <span class="info-label">Time:</span> %s
+                </div>
+                <div class="info-row">
+                    <span class="info-label">IP Address:</span> %s
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Device:</span> %s
+                </div>
+            </div>
+            <p>If this was you, you can safely ignore this email.</p>
+            <div class="warning">
+                <strong>⚠️ Didn't recognize this login?</strong>
+                <p style="margin: 10px 0 0 0;">If you didn't log in, please secure your account immediately by changing your password.</p>
+                <a href="http://localhost:3000/auth/forgot-password" class="button">Reset Password</a>
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 ReferLoop. All rights reserved.</p>
+            <p>This is an automated security email. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>
+`, firstName, loginTime, ipAddress, userAgent)
+
+	message := EmailMessage{
+		To:      []string{email},
+		Subject: subject,
+		Body:    htmlBody,
+		IsHTML:  true,
+	}
+
+	return es.Send(message)
+}
+
+
+
 // SendWelcomeEmail sends a welcome email to new users
 func (es *EmailService) SendWelcomeEmail(email, firstName, role string) error {
 	subject := "Welcome to ReferLoop!"
