@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"backend/internal/config"
 	"backend/internal/models"
+	"backend/internal/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -92,6 +95,29 @@ func CreateReferral(c *gin.Context) {
 		request.Status = models.StatusPendingConfirmation
 	}
 	db.Save(&request)
+
+	// Send notification email to the referrer
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+
+	// Fetch request details for email
+	db.Preload("User").First(&request, input.RequestID)
+	if request.User != nil {
+		emailHelper := services.NewEmailHelper()
+		jobTitle := "Job Opportunity"
+		// You might want to add JobTitle field to ReferralRequest model
+		if err := emailHelper.SendReferralNotification(
+			request.User.Email,
+			userObj.FirstName,
+			request.User.FirstName,
+			jobTitle,
+		); err != nil {
+			// Log error but don't fail the request
+			fmt.Printf("Failed to send referral notification email: %v\n", err)
+		}
+	}
 
 	c.JSON(http.StatusCreated, referral)
 }
@@ -219,6 +245,20 @@ func ConfirmReferral(c *gin.Context) {
 
 		// Update user's reward points
 		db.Model(&models.User{ID: referral.ReferrerID}).Update("reward_points", gorm.Expr("reward_points + ?", 100))
+
+		// Fetch referrer details for email notification
+		var referrer models.User
+		db.First(&referrer, referral.ReferrerID)
+		emailHelper := services.NewEmailHelper()
+		if err := emailHelper.SendRewardNotification(
+			referrer.Email,
+			referrer.FirstName,
+			100,
+			referrer.RewardPoints + 100,
+		); err != nil {
+			// Log error but don't fail the request
+			fmt.Printf("Failed to send reward notification email: %v\n", err)
+		}
 
 		// Close the request
 		referral.Request.Status = models.StatusClosed

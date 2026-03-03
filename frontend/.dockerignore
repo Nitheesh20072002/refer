@@ -1,0 +1,29 @@
+
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Local env files (important!)
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Next.js
+.next
+out
+
+# Testing
+coverage
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+*.log
+
+# IDE
+.vscode
+.idea

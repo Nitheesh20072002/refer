@@ -10,8 +10,17 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Accept build argument for API URL
+ARG NEXT_PUBLIC_API_URL=/api
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+
 # Disable telemetry for faster builds
 ENV NEXT_TELEMETRY_DISABLED 1
+
+# Set Node.js memory limit to prevent OOM during build
+ENV NODE_OPTIONS="--max-old-space-size=2048"
+
 RUN npm run build
 
 # -------- Stage 3: Runner --------

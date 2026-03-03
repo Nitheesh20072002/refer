@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"time"
 
 	"backend/internal/config"
 	"backend/internal/models"
+	"backend/internal/services"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -44,7 +46,7 @@ func Signup(c *gin.Context) {
 	// Check if user already exists
 	var existingUser models.User
 	if err := db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "Email already registered"})
+		c.JSON(http.StatusConflict, gin.H{"error": "Account already exists with this email"})
 		return
 	}
 
@@ -80,7 +82,18 @@ func Signup(c *gin.Context) {
 	}
 	db.Create(&verificationToken)
 
-	// TODO: Send verification email
+	// Send verification email
+	emailService := services.NewEmailService()
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+	verificationURL := fmt.Sprintf("%s/auth/verify-email?token=%s", baseURL, token)
+
+	if err := emailService.SendVerificationEmail(user.Email, user.FirstName, token, verificationURL); err != nil {
+		// Log the error but don't fail the signup
+		fmt.Printf("Failed to send verification email: %v\n", err)
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "User created. Check your email for verification link.",
@@ -130,6 +143,18 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// Send login notification email (optional, non-blocking)
+	go func() {
+		emailService := services.NewEmailService()
+		loginTime := time.Now().Format("January 2, 2006 at 3:04 PM MST")
+		ipAddress := c.ClientIP()
+		userAgent := c.Request.UserAgent()
+		
+		if err := emailService.SendLoginNotificationEmail(user.Email, user.FirstName, loginTime, ipAddress, userAgent); err != nil {
+			fmt.Printf("Failed to send login notification email: %v\n", err)
+		}
+	}()
+
 	c.JSON(http.StatusOK, gin.H{
 		"token": tokenString,
 		"user": gin.H{
@@ -161,6 +186,15 @@ func VerifyEmail(c *gin.Context) {
 	now := time.Now()
 	db.Model(&verifToken).Update("used_at", now)
 	db.Model(&models.User{ID: verifToken.UserID}).Update("is_verified", true)
+
+	// Send welcome email
+	var user models.User
+	db.First(&user, verifToken.UserID)
+	emailService := services.NewEmailService()
+	if err := emailService.SendWelcomeEmail(user.Email, user.FirstName, string(user.Role)); err != nil {
+		// Log the error but don't fail the verification
+		fmt.Printf("Failed to send welcome email: %v\n", err)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully"})
 }
@@ -199,7 +233,102 @@ func ResendVerification(c *gin.Context) {
 	}
 	db.Create(&verificationToken)
 
-	// TODO: Send verification email
+	// Send verification email
+	emailService := services.NewEmailService()
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+	verificationURL := fmt.Sprintf("%s/auth/verify-email?token=%s", baseURL, token)
+
+	if err := emailService.SendVerificationEmail(user.Email, user.FirstName, token, verificationURL); err != nil {
+		// Log the error but don't fail the resend
+		fmt.Printf("Failed to send verification email: %v\n", err)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Verification link sent to your email"})
+}
+
+// ForgotPasswordRequest handles password reset requests
+func ForgotPassword(c *gin.Context) {
+	var req struct {
+		Email string `json:"email" binding:"required,email"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	db := config.GetDB()
+
+	// Find user
+	var user models.User
+	if err := db.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		// Don't reveal if user exists or not for security
+		c.JSON(http.StatusOK, gin.H{"message": "If an account exists with this email, you will receive a password reset link"})
+		return
+	}
+
+	// Create password reset token
+	token := uuid.New().String()
+	resetToken := models.VerificationToken{
+		UserID:    user.ID,
+		Token:     token,
+		Type:      "password_reset",
+		ExpiresAt: time.Now().Add(1 * time.Hour), // 1 hour expiry
+	}
+	db.Create(&resetToken)
+
+	// Send password reset email
+	emailService := services.NewEmailService()
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+	resetURL := fmt.Sprintf("%s/auth/reset-password?token=%s", baseURL, token)
+
+	if err := emailService.SendPasswordResetEmail(user.Email, user.FirstName, token, resetURL); err != nil {
+		// Log the error but don't fail the request
+		fmt.Printf("Failed to send password reset email: %v\n", err)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "If an account exists with this email, you will receive a password reset link"})
+}
+
+// ResetPassword handles password reset
+func ResetPassword(c *gin.Context) {
+	var req struct {
+		Token       string `json:"token" binding:"required"`
+		NewPassword string `json:"new_password" binding:"required,min=8"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	db := config.GetDB()
+
+	// Find password reset token
+	var resetToken models.VerificationToken
+	if err := db.Where("token = ? AND type = ? AND expires_at > ? AND used_at IS NULL",
+		req.Token, "password_reset", time.Now()).First(&resetToken).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid or expired token"})
+		return
+	}
+
+	// Hash new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process password"})
+		return
+	}
+
+	// Update user password
+	now := time.Now()
+	db.Model(&models.User{ID: resetToken.UserID}).Update("password", string(hashedPassword))
+	db.Model(&resetToken).Update("used_at", now)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset successfully"})
 }

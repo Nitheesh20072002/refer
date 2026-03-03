@@ -45,6 +45,7 @@ services:
       DB_NAME: referloop
       GIN_MODE: release # Set to release for production
       JWT_SECRET: your-super-secret-key
+      FRONTEND_URL: http://localhost:8080
     depends_on:
       postgres:
         condition: service_healthy
@@ -53,11 +54,20 @@ services:
 
   # Next.js Frontend
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: /api
     container_name: referloop_frontend
     environment:
-      # Browser calls this (Nginx will route /api to the 'api' container)
-      NEXT_PUBLIC_API_URL: /api 
+      # This is for runtime, but NEXT_PUBLIC_ vars are baked in at build time
+      NEXT_PUBLIC_API_URL: /api
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+        reservations:
+          memory: 1G
     networks:
       - referloop-network
 
