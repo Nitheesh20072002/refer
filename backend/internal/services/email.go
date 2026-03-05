@@ -316,6 +316,13 @@ func (es *EmailService) SendPasswordResetEmail(email, firstName, resetToken, res
 func (es *EmailService) SendReferralNotificationEmail(email, referrerName, jobSeekerName, jobTitle string) error {
 	subject := fmt.Sprintf("New Referral: %s - ReferLoop", jobTitle)
 
+	// Get frontend URL from environment
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+	dashboardURL := baseURL + "/dashboard"
+
 	htmlBody := fmt.Sprintf(`
 <!DOCTYPE html>
 <html>
@@ -330,13 +337,13 @@ func (es *EmailService) SendReferralNotificationEmail(email, referrerName, jobSe
         .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
         .content { background-color: #f9fafb; padding: 20px; border-radius: 8px; }
         .highlight { background-color: #dbeafe; padding: 15px; border-left: 4px solid #3b82f6; margin: 20px 0; }
-        .button { 
-            display: inline-block; 
-            padding: 12px 30px; 
-            background-color: #3b82f6; 
-            color: white; 
-            text-decoration: none; 
-            border-radius: 5px; 
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
             margin: 20px 0;
         }
         .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #999; }
@@ -355,7 +362,7 @@ func (es *EmailService) SendReferralNotificationEmail(email, referrerName, jobSe
                 <p><strong>Position:</strong> %s</p>
             </div>
             <p>Log in to your ReferLoop dashboard to review the details and confirm the referral.</p>
-            <a href="https://referloop.app/dashboard" class="button">View Referral</a>
+            <a href="%s" class="button">View Referral</a>
             <p>Remember, once both parties confirm, you'll earn 100 reward points!</p>
         </div>
         <div class="footer">
@@ -365,7 +372,7 @@ func (es *EmailService) SendReferralNotificationEmail(email, referrerName, jobSe
     </div>
 </body>
 </html>
-`, referrerName, jobSeekerName, jobTitle)
+`, referrerName, jobSeekerName, jobTitle, dashboardURL)
 
 	message := EmailMessage{
 		To:      []string{email},
@@ -381,6 +388,13 @@ func (es *EmailService) SendReferralNotificationEmail(email, referrerName, jobSe
 func (es *EmailService) SendRewardNotificationEmail(email, firstName string, points int64, totalPoints int64) error {
 	subject := fmt.Sprintf("Congratulations! You earned %d reward points!", points)
 
+	// Get frontend URL from environment
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+	rewardsURL := baseURL + "/rewards"
+
 	htmlBody := fmt.Sprintf(`
 <!DOCTYPE html>
 <html>
@@ -394,7 +408,7 @@ func (es *EmailService) SendRewardNotificationEmail(email, firstName string, poi
         .header { text-align: center; margin-bottom: 30px; }
         .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
         .content { background-color: #f9fafb; padding: 20px; border-radius: 8px; }
-        .reward-box { 
+        .reward-box {
             background: linear-gradient(135deg, #fbbf24 0%%, #f59e0b 100%%);
             color: white;
             padding: 20px;
@@ -404,13 +418,13 @@ func (es *EmailService) SendRewardNotificationEmail(email, firstName string, poi
         }
         .reward-amount { font-size: 48px; font-weight: bold; }
         .reward-label { font-size: 18px; margin-top: 10px; }
-        .button { 
-            display: inline-block; 
-            padding: 12px 30px; 
-            background-color: #3b82f6; 
-            color: white; 
-            text-decoration: none; 
-            border-radius: 5px; 
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
             margin: 20px 0;
         }
         .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #999; }
@@ -430,7 +444,7 @@ func (es *EmailService) SendRewardNotificationEmail(email, firstName string, poi
             </div>
             <p>Your total reward points: <strong>%d</strong></p>
             <p>Keep referring to earn more points and unlock exclusive benefits!</p>
-            <a href="https://referloop.app/rewards" class="button">View Rewards</a>
+            <a href="%s" class="button">View Rewards</a>
         </div>
         <div class="footer">
             <p>&copy; 2026 ReferLoop. All rights reserved.</p>
@@ -439,7 +453,7 @@ func (es *EmailService) SendRewardNotificationEmail(email, firstName string, poi
     </div>
 </body>
 </html>
-`, firstName, points, totalPoints)
+`, firstName, points, totalPoints, rewardsURL)
 
 	message := EmailMessage{
 		To:      []string{email},
@@ -540,6 +554,14 @@ func (es *EmailService) SendWelcomeEmail(email, firstName, role string) error {
 		roleDescription = "referrer"
 	}
 
+	// Get frontend URL from environment
+	baseURL := os.Getenv("FRONTEND_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:3000"
+	}
+	dashboardURL := baseURL + "/dashboard"
+	helpURL := baseURL + "/help"
+
 	htmlBody := fmt.Sprintf(`
 <!DOCTYPE html>
 <html>
@@ -553,13 +575,13 @@ func (es *EmailService) SendWelcomeEmail(email, firstName, role string) error {
         .header { text-align: center; margin-bottom: 30px; }
         .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
         .content { background-color: #f9fafb; padding: 20px; border-radius: 8px; }
-        .button { 
-            display: inline-block; 
-            padding: 12px 30px; 
-            background-color: #3b82f6; 
-            color: white; 
-            text-decoration: none; 
-            border-radius: 5px; 
+        .button {
+            display: inline-block;
+            padding: 12px 30px;
+            background-color: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
             margin: 20px 0;
         }
         .features { margin: 20px 0; }
@@ -583,8 +605,8 @@ func (es *EmailService) SendWelcomeEmail(email, firstName, role string) error {
                 <div class="feature">✓ Access exclusive career resources</div>
             </div>
             <p>Get started by completing your profile and exploring opportunities.</p>
-            <a href="https://referloop.app/dashboard" class="button">Go to Dashboard</a>
-            <p>Questions? Check out our <a href="https://referloop.app/help">help center</a> or contact support.</p>
+            <a href="%s" class="button">Go to Dashboard</a>
+            <p>Questions? Check out our <a href="%s">help center</a> or contact support.</p>
         </div>
         <div class="footer">
             <p>&copy; 2026 ReferLoop. All rights reserved.</p>
@@ -593,7 +615,7 @@ func (es *EmailService) SendWelcomeEmail(email, firstName, role string) error {
     </div>
 </body>
 </html>
-`, firstName, roleDescription)
+`, firstName, roleDescription, dashboardURL, helpURL)
 
 	message := EmailMessage{
 		To:      []string{email},

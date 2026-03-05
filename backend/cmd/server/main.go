@@ -46,13 +46,19 @@ func main() {
 		auth.POST("/reset-password", handlers.ResetPassword)
 	}
 
+	// Public company routes (no auth required for signup)
+	router.GET("/api/companies", handlers.GetCompanies)
+	router.POST("/api/companies", handlers.CreateCompany)
+
+	// Public referrers list (no auth required)
+	router.GET("/api/referrers", handlers.GetReferrers)
+
 	// User routes (auth required)
 	user := router.Group("/api/users")
 	user.Use(middleware.AuthMiddleware())
 	{
 		user.GET("/profile", handlers.GetProfile)
 		user.PUT("/profile", handlers.UpdateProfile)
-		user.GET("/companies", handlers.GetCompanies)
 	}
 
 	// Referral Request routes (auth required)

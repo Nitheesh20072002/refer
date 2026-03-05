@@ -17,12 +17,15 @@ import (
 )
 
 type SignupRequest struct {
-	Email     string `json:"email" binding:"required,email"`
-	Password  string `json:"password" binding:"required,min=8"`
-	FirstName string `json:"first_name" binding:"required"`
-	LastName  string `json:"last_name" binding:"required"`
-	Role      string `json:"role" binding:"required,oneof=job_seeker referrer"`
-	CompanyID *uint  `json:"company_id"`
+	Email          string `json:"email" binding:"required,email"`
+	Password       string `json:"password" binding:"required,min=8"`
+	FirstName      string `json:"first_name" binding:"required"`
+	LastName       string `json:"last_name" binding:"required"`
+	Role           string `json:"role" binding:"required,oneof=job_seeker referrer"`
+	CompanyID      *uint  `json:"company_id"`
+	CompanyName    string `json:"company_name"`
+	CompanyWebsite string `json:"company_website"`
+	CompanyDomain  string `json:"company_domain"`
 }
 
 type LoginRequest struct {
@@ -50,6 +53,31 @@ func Signup(c *gin.Context) {
 		return
 	}
 
+	// If referrer and company_name provided (new company), create company first
+	var companyID *uint = req.CompanyID
+	if req.Role == "referrer" && req.CompanyName != "" && req.CompanyID == nil {
+		// Check if company already exists by name or domain
+		var existingCompany models.Company
+		if req.CompanyDomain != "" {
+			if err := db.Where("name = ? OR domain = ?", req.CompanyName, req.CompanyDomain).First(&existingCompany).Error; err == nil {
+				// Company exists, use its ID
+				companyID = &existingCompany.ID
+			} else {
+				// Create new company
+				newCompany := models.Company{
+					Name:    req.CompanyName,
+					Website: req.CompanyWebsite,
+					Domain:  req.CompanyDomain,
+				}
+				if err := db.Create(&newCompany).Error; err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create company"})
+					return
+				}
+				companyID = &newCompany.ID
+			}
+		}
+	}
+
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -64,7 +92,7 @@ func Signup(c *gin.Context) {
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 		Role:      models.UserRole(req.Role),
-		CompanyID: req.CompanyID,
+		CompanyID: companyID,
 	}
 
 	if err := db.Create(&user).Error; err != nil {
