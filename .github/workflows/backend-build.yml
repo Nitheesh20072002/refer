@@ -1,0 +1,38 @@
+name: backend server build
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      
+      - name: Build backend server
+        working-directory: backend
+        run: go build -o Main cmd/server/main.go
+        
+      - name: Verify build artifact
+        working-directory: backend
+        run: |
+          if [ -f "Main" ]; then
+            echo "✓ Build successful - Main binary created"
+            ls -lh Main
+          else
+            echo "✗ Build failed - Main binary not found"
+            exit 1
+          fi

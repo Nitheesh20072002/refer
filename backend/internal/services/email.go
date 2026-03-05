@@ -451,86 +451,6 @@ func (es *EmailService) SendRewardNotificationEmail(email, firstName string, poi
 	return es.Send(message)
 }
 
-// SendLoginNotificationEmail sends a notification when user logs in
-func (es *EmailService) SendLoginNotificationEmail(email, firstName, loginTime, ipAddress, userAgent string) error {
-	subject := "New Login to Your ReferLoop Account"
-
-	htmlBody := fmt.Sprintf(`
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Notification</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
-        .content { background-color: #f9fafb; padding: 20px; border-radius: 8px; }
-        .info-box { background-color: #e5e7eb; padding: 15px; border-radius: 5px; margin: 15px 0; }
-        .info-row { margin: 8px 0; }
-        .info-label { font-weight: bold; color: #666; }
-        .warning { background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px; margin: 15px 0; }
-        .button { 
-            display: inline-block; 
-            padding: 12px 30px; 
-            background-color: #ef4444; 
-            color: white; 
-            text-decoration: none; 
-            border-radius: 5px; 
-            margin: 15px 0;
-        }
-        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #999; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">ReferLoop</div>
-        </div>
-        <div class="content">
-            <p>Hello %s,</p>
-            <p>We detected a new login to your ReferLoop account:</p>
-            <div class="info-box">
-                <div class="info-row">
-                    <span class="info-label">Time:</span> %s
-                </div>
-                <div class="info-row">
-                    <span class="info-label">IP Address:</span> %s
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Device:</span> %s
-                </div>
-            </div>
-            <p>If this was you, you can safely ignore this email.</p>
-            <div class="warning">
-                <strong>⚠️ Didn't recognize this login?</strong>
-                <p style="margin: 10px 0 0 0;">If you didn't log in, please secure your account immediately by changing your password.</p>
-                <a href="http://localhost:3000/auth/forgot-password" class="button">Reset Password</a>
-            </div>
-        </div>
-        <div class="footer">
-            <p>&copy; 2026 ReferLoop. All rights reserved.</p>
-            <p>This is an automated security email. Please do not reply.</p>
-        </div>
-    </div>
-</body>
-</html>
-`, firstName, loginTime, ipAddress, userAgent)
-
-	message := EmailMessage{
-		To:      []string{email},
-		Subject: subject,
-		Body:    htmlBody,
-		IsHTML:  true,
-	}
-
-	return es.Send(message)
-}
-
-
-
 // SendWelcomeEmail sends a welcome email to new users
 func (es *EmailService) SendWelcomeEmail(email, firstName, role string) error {
 	subject := "Welcome to ReferLoop!"
@@ -594,6 +514,211 @@ func (es *EmailService) SendWelcomeEmail(email, firstName, role string) error {
 </body>
 </html>
 `, firstName, roleDescription)
+
+	message := EmailMessage{
+		To:      []string{email},
+		Subject: subject,
+		Body:    htmlBody,
+		IsHTML:  true,
+	}
+
+	return es.Send(message)
+}
+
+// SendLoginNotificationEmail sends a notification about a successful login
+func (es *EmailService) SendLoginNotificationEmail(email, firstName, loginTime, ipAddress, userAgent string) error {
+	subject := "New Login to Your ReferLoop Account"
+
+	htmlBody := fmt.Sprintf(`
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Notification</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
+        .content { background-color: #f9fafb; padding: 20px; border-radius: 8px; }
+        .info-box { background-color: #e5e7eb; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .info-item { margin: 10px 0; }
+        .alert { background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">ReferLoop</div>
+        </div>
+        <div class="content">
+            <p>Hello %s,</p>
+            <p>We detected a new login to your ReferLoop account.</p>
+            <div class="info-box">
+                <div class="info-item"><strong>Time:</strong> %s</div>
+                <div class="info-item"><strong>IP Address:</strong> %s</div>
+                <div class="info-item"><strong>Device:</strong> %s</div>
+            </div>
+            <div class="alert">
+                <p><strong>Was this you?</strong></p>
+                <p>If you didn't log in, please change your password immediately and contact our support team.</p>
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 ReferLoop. All rights reserved.</p>
+            <p>This is an automated email. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>
+`, firstName, loginTime, ipAddress, userAgent)
+
+	message := EmailMessage{
+		To:      []string{email},
+		Subject: subject,
+		Body:    htmlBody,
+		IsHTML:  true,
+	}
+
+	return es.Send(message)
+}
+
+// SendReferralOpportunityNotificationEmail sends a notification about a new referral opportunity
+func (es *EmailService) SendReferralOpportunityNotificationEmail(email, firstName, jobSeekerName, jobTitle, companyName string) error {
+	subject := fmt.Sprintf("New Referral Opportunity: %s at %s", jobTitle, companyName)
+
+	htmlBody := fmt.Sprintf(`
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referral Opportunity</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
+        .content { background-color: #f9fafb; padding: 20px; border-radius: 8px; }
+        .opportunity-box { 
+            background: linear-gradient(135deg, #3b82f6 0%%, #2563eb 100%%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .button { 
+            display: inline-block; 
+            padding: 12px 30px; 
+            background-color: #10b981; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            margin: 20px 0;
+        }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">ReferLoop</div>
+        </div>
+        <div class="content">
+            <p>Hello %s,</p>
+            <p>Great news! A job seeker is interested in a referral opportunity at your company.</p>
+            <div class="opportunity-box">
+                <p><strong>Job Seeker:</strong> %s</p>
+                <p><strong>Position:</strong> %s</p>
+                <p><strong>Company:</strong> %s</p>
+            </div>
+            <p>Review the candidate's profile and confirm the referral to earn reward points!</p>
+            <a href="https://referloop.app/dashboard/referrals" class="button">View Opportunity</a>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 ReferLoop. All rights reserved.</p>
+            <p>This is an automated email. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>
+`, firstName, jobSeekerName, jobTitle, companyName)
+
+	message := EmailMessage{
+		To:      []string{email},
+		Subject: subject,
+		Body:    htmlBody,
+		IsHTML:  true,
+	}
+
+	return es.Send(message)
+}
+
+// SendReferralAcceptedNotificationEmail sends a notification when a referral is accepted
+func (es *EmailService) SendReferralAcceptedNotificationEmail(email, firstName, referrerName, jobTitle, companyName string) error {
+	subject := fmt.Sprintf("Referral Accepted: %s at %s", jobTitle, companyName)
+
+	htmlBody := fmt.Sprintf(`
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referral Accepted</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .logo { font-size: 28px; font-weight: bold; color: #3b82f6; }
+        .content { background-color: #f9fafb; padding: 20px; border-radius: 8px; }
+        .success-box { 
+            background: linear-gradient(135deg, #10b981 0%%, #059669 100%%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .success-icon { font-size: 48px; margin-bottom: 10px; }
+        .button { 
+            display: inline-block; 
+            padding: 12px 30px; 
+            background-color: #3b82f6; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 5px; 
+            margin: 20px 0;
+        }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #999; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">ReferLoop</div>
+        </div>
+        <div class="content">
+            <p>Hello %s,</p>
+            <div class="success-box">
+                <div class="success-icon">✓</div>
+                <h2>Referral Accepted!</h2>
+            </div>
+            <p>Great news! Your referral has been accepted by <strong>%s</strong>.</p>
+            <p><strong>Position:</strong> %s</p>
+            <p><strong>Company:</strong> %s</p>
+            <p>Both you and the referrer will earn 100 reward points once both parties confirm the referral.</p>
+            <a href="https://referloop.app/dashboard/referrals" class="button">View Details</a>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 ReferLoop. All rights reserved.</p>
+            <p>This is an automated email. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html>
+`, firstName, referrerName, jobTitle, companyName)
 
 	message := EmailMessage{
 		To:      []string{email},

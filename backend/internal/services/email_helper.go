@@ -39,7 +39,12 @@ func (eh *EmailHelper) SendWelcomeEmail(email, firstName, role string) error {
 	return eh.service.SendWelcomeEmail(email, firstName, role)
 }
 
-// SendLoginNotification is a helper to send login notification emails
-func (eh *EmailHelper) SendLoginNotification(email, firstName, loginTime, ipAddress, userAgent string) error {
-	return eh.service.SendLoginNotificationEmail(email, firstName, loginTime, ipAddress, userAgent)
+// SendReferralOpportunityNotification is a helper to send referral opportunity notifications
+func (eh *EmailHelper) SendReferralOpportunityNotification(email, firstName, jobSeekerName, jobTitle, companyName string) error {
+	return eh.service.SendReferralOpportunityNotificationEmail(email, firstName, jobSeekerName, jobTitle, companyName)
+}
+
+// SendReferralAcceptedNotification is a helper to send referral accepted notifications
+func (eh *EmailHelper) SendReferralAcceptedNotification(email, firstName, referrerName, jobTitle, companyName string) error {
+	return eh.service.SendReferralAcceptedNotificationEmail(email, firstName, referrerName, jobTitle, companyName)
 }

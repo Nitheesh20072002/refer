@@ -35,6 +35,8 @@ func InitDB() *gorm.DB {
 		&models.Referral{},
 		&models.Reward{},
 		&models.VerificationToken{},
+		&models.JobOpening{},
+		&models.ReferralRequestFromOpening{},
 	)
 
 	DB = db

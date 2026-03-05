@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 import {
   LayoutDashboard,
   Users,
@@ -12,12 +13,14 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Briefcase,
 } from "lucide-react"
 import { useSidebarState } from "./sidebar-context"
 import { useAuth } from "@/lib/auth-context"
 
 const mainNav = [
-  { label: "Dashboard", icon: LayoutDashboard, active: true },
+  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard", active: true },
+  { label: "Job Openings", icon: Briefcase, href: "/openings", active: false },
   { label: "Referrers", icon: Users, active: false },
   { label: "Campaigns", icon: Link2, active: false },
   { label: "Analytics", icon: BarChart3, active: false },
@@ -57,17 +60,32 @@ export function DashboardSidebar() {
         <ul className="flex flex-col gap-1">
           {mainNav.map((item) => (
             <li key={item.label}>
-              <button
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  item.active
-                    ? "bg-sidebar-accent text-primary"
-                    : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                )}
-              >
-                <item.icon className="size-5 shrink-0" />
-                {!collapsed && <span>{item.label}</span>}
-              </button>
+              {item.href ? (
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    item.active
+                      ? "bg-sidebar-accent text-primary"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <item.icon className="size-5 shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </Link>
+              ) : (
+                <button
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                    item.active
+                      ? "bg-sidebar-accent text-primary"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  )}
+                >
+                  <item.icon className="size-5 shrink-0" />
+                  {!collapsed && <span>{item.label}</span>}
+                </button>
+              )}
             </li>
           ))}
         </ul>
