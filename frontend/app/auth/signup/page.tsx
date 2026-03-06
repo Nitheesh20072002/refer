@@ -1,17 +1,25 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, ArrowRight, Mail, Lock, User, Loader2, Building2, CheckCircle2 } from "lucide-react"
+import { AlertCircle, ArrowRight, Mail, Lock, User, Loader2, Building2, CheckCircle2, Plus } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAuth } from "@/lib/auth-context"
 import { apiClient } from "@/lib/api-client"
+
+interface Company {
+  id: number
+  name: string
+  domain: string
+  website?: string
+}
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -21,13 +29,38 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
     role: "job_seeker" as "job_seeker" | "referrer",
-    company: "",
+    companyId: "",
+    companyName: "",
+    companyDomain: "",
+    companyWebsite: "",
     agreeToTerms: false,
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [isSuccess, setIsSuccess] = useState(false)
+  const [companies, setCompanies] = useState<Company[]>([])
+  const [showAddCompany, setShowAddCompany] = useState(false)
+  const [loadingCompanies, setLoadingCompanies] = useState(false)
   const { signup } = useAuth()
+
+  // Load companies when role changes to referrer
+  useEffect(() => {
+    if (formData.role === "referrer" && companies.length === 0) {
+      loadCompanies()
+    }
+  }, [formData.role])
+
+  const loadCompanies = async () => {
+    setLoadingCompanies(true)
+    try {
+      const companiesList = await apiClient.getCompanies()
+      setCompanies(companiesList)
+    } catch (err) {
+      console.error("Failed to load companies:", err)
+    } finally {
+      setLoadingCompanies(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -47,15 +80,45 @@ export default function SignupPage() {
       return
     }
 
+    // Validate company selection for referrers
+    if (formData.role === "referrer") {
+      if (!showAddCompany && !formData.companyId) {
+        setError("Please select a company or add a new one")
+        setIsLoading(false)
+        return
+      }
+      if (showAddCompany && (!formData.companyName || !formData.companyDomain)) {
+        setError("Please provide company name and domain")
+        setIsLoading(false)
+        return
+      }
+    }
+
     try {
-      // Call API directly instead of using auth context to prevent auto-redirect
-      await apiClient.signup({
+      // Prepare signup data
+      const signupData: any = {
         email: formData.email,
         password: formData.password,
         first_name: formData.firstName,
         last_name: formData.lastName,
         role: formData.role,
-      })
+      }
+
+      // Add company info for referrers
+      if (formData.role === "referrer") {
+        if (showAddCompany) {
+          // Adding new company
+          signupData.company_name = formData.companyName
+          signupData.company_domain = formData.companyDomain
+          signupData.company_website = formData.companyWebsite
+        } else {
+          // Using existing company
+          signupData.company_id = parseInt(formData.companyId)
+        }
+      }
+
+      // Call API directly instead of using auth context to prevent auto-redirect
+      await apiClient.signup(signupData)
       
       // Show success message instead of redirecting
       setIsSuccess(true)
@@ -290,20 +353,161 @@ export default function SignupPage() {
 
               {/* Company (for referrers) */}
               {formData.role === "referrer" && (
-                <div className="space-y-2">
-                  <Label htmlFor="company">Company</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="company"
-                      type="text"
-                      placeholder="Google, Microsoft, etc."
-                      value={formData.company}
-                      onChange={(e) => handleInputChange("company", e.target.value)}
-                      className="pl-10"
-                      required
-                    />
+                <div className="space-y-4 animate-in fade-in-50 duration-300">
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-primary" />
+                      Your Company
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Select your company to help candidates find the right referrers
+                    </p>
                   </div>
+                  
+                  {!showAddCompany ? (
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                        <Select
+                          value={formData.companyId}
+                          onValueChange={(value) => handleInputChange("companyId", value)}
+                          disabled={loadingCompanies}
+                        >
+                          <SelectTrigger className="pl-10 h-11 w-full">
+                            <SelectValue placeholder={loadingCompanies ? "Loading companies..." : "Select your company"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {companies.length === 0 ? (
+                              <div className="p-4 text-center text-sm text-muted-foreground">
+                                No companies found. Add yours below!
+                              </div>
+                            ) : (
+                              companies.map((company) => (
+                                <SelectItem key={company.id} value={company.id.toString()}>
+                                  <div className="flex items-center gap-2">
+                                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                                    {company.name}
+                                  </div>
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-background px-2 text-muted-foreground">or</span>
+                        </div>
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowAddCompany(true)}
+                        className="w-full h-11 border-dashed border-2 hover:border-primary hover:bg-primary/5 transition-colors"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add New Company
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 border-2 border-primary/20 rounded-lg p-5 bg-gradient-to-br from-primary/5 to-transparent animate-in fade-in-50 duration-300">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 rounded-full bg-primary/10">
+                            <Building2 className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-semibold">Add Your Company</Label>
+                            <p className="text-xs text-muted-foreground">Fill in your company details</p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setShowAddCompany(false)
+                            setFormData(prev => ({
+                              ...prev,
+                              companyName: "",
+                              companyDomain: "",
+                              companyWebsite: ""
+                            }))
+                          }}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          ← Back to list
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="companyName" className="text-sm flex items-center gap-1">
+                            Company Name <span className="text-destructive">*</span>
+                          </Label>
+                          <Input
+                            id="companyName"
+                            type="text"
+                            placeholder="e.g., Google, Microsoft, Amazon"
+                            value={formData.companyName}
+                            onChange={(e) => handleInputChange("companyName", e.target.value)}
+                            className="h-10"
+                            required
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="companyDomain" className="text-sm flex items-center gap-1">
+                            Email Domain <span className="text-destructive">*</span>
+                          </Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                              @
+                            </span>
+                            <Input
+                              id="companyDomain"
+                              type="text"
+                              placeholder="google.com"
+                              value={formData.companyDomain}
+                              onChange={(e) => handleInputChange("companyDomain", e.target.value)}
+                              className="pl-7 h-10"
+                              required
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <span className="inline-block w-1 h-1 rounded-full bg-muted-foreground"></span>
+                            This should match your work email domain
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="companyWebsite" className="text-sm">
+                            Company Website <span className="text-muted-foreground text-xs">(optional)</span>
+                          </Label>
+                          <Input
+                            id="companyWebsite"
+                            type="url"
+                            placeholder="https://www.company.com"
+                            value={formData.companyWebsite}
+                            onChange={(e) => handleInputChange("companyWebsite", e.target.value)}
+                            className="h-10"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="pt-2 px-3 py-2 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900 rounded-md">
+                        <p className="text-xs text-blue-800 dark:text-blue-300 flex items-start gap-2">
+                          <CheckCircle2 className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                          <span>Your company will be verified and added to our database for other employees to find.</span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

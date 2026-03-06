@@ -1,7 +1,10 @@
+"use client"
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { ArrowUpRight, MoreHorizontal } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 const referrers = [
   {
@@ -80,6 +83,8 @@ function getTierStyles(tier: string) {
 }
 
 export function ReferrerCards() {
+  const router = useRouter()
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -91,7 +96,10 @@ export function ReferrerCards() {
             Your highest performing referral partners this month
           </p>
         </div>
-        <button className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">
+        <button
+          onClick={() => router.push('/referrers')}
+          className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+        >
           View All
           <ArrowUpRight className="size-4" />
         </button>
