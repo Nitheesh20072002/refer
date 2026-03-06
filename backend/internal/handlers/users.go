@@ -65,10 +65,88 @@ func GetCompanies(c *gin.Context) {
 	db := config.GetDB()
 	
 	var companies []models.Company
-	if err := db.Find(&companies).Error; err != nil {
+	if err := db.Order("name ASC").Find(&companies).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch companies"})
 		return
 	}
 
 	c.JSON(http.StatusOK, companies)
+}
+
+// CreateCompany creates a new company (public endpoint for signup)
+func CreateCompany(c *gin.Context) {
+	var req struct {
+		Name    string `json:"name" binding:"required"`
+		Website string `json:"website"`
+		Domain  string `json:"domain" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	db := config.GetDB()
+
+	// Check if company already exists
+	var existingCompany models.Company
+	if err := db.Where("name = ? OR domain = ?", req.Name, req.Domain).First(&existingCompany).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Company already exists", "company": existingCompany})
+		return
+	}
+
+	// Create new company
+	company := models.Company{
+		Name:    req.Name,
+		Website: req.Website,
+		Domain:  req.Domain,
+	}
+
+	if err := db.Create(&company).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create company"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, company)
+}
+
+// GetReferrers returns a list of all referrers with optional search filters
+func GetReferrers(c *gin.Context) {
+	db := config.GetDB()
+
+	// Get query parameters
+	search := c.Query("search")       // General search (name, tech_stack)
+	companyID := c.Query("company_id") // Filter by company
+	techStack := c.Query("tech_stack") // Filter by tech stack
+
+	// Start building query
+	query := db.Where("role = ?", "referrer").Preload("Company")
+
+	// Apply filters
+	if search != "" {
+		searchPattern := "%" + search + "%"
+		query = query.Where(
+			"LOWER(first_name) LIKE LOWER(?) OR LOWER(last_name) LIKE LOWER(?) OR LOWER(tech_stack) LIKE LOWER(?)",
+			searchPattern, searchPattern, searchPattern,
+		)
+	}
+
+	if companyID != "" {
+		query = query.Where("company_id = ?", companyID)
+	}
+
+	if techStack != "" {
+		query = query.Where("LOWER(tech_stack) LIKE LOWER(?)", "%"+techStack+"%")
+	}
+
+	// Fetch referrers
+	var referrers []models.User
+	if err := query.Select("id", "first_name", "last_name", "company_id", "tech_stack", "linkedin", "github", "reward_points").
+		Order("first_name ASC").
+		Find(&referrers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch referrers"})
+		return
+	}
+
+	c.JSON(http.StatusOK, referrers)
 }

@@ -70,17 +70,13 @@ class ApiClient {
     last_name: string
     role: string
     company_id?: number
+    company_name?: string
+    company_website?: string
+    company_domain?: string
   }) {
     return this.request<{
       message: string
-      user: {
-        id: number
-        email: string
-        first_name: string
-        last_name: string
-        role: string
-        company_id?: number
-      }
+      user_id: number
     }>('/auth/signup', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -170,9 +166,26 @@ class ApiClient {
         id: number
         name: string
         domain: string
+        website?: string
       }>
-    >('/users/companies', {
+    >('/companies', {
       method: 'GET',
+    })
+  }
+
+  async createCompany(data: {
+    name: string
+    domain: string
+    website?: string
+  }) {
+    return this.request<{
+      id: number
+      name: string
+      domain: string
+      website?: string
+    }>('/companies', {
+      method: 'POST',
+      body: JSON.stringify(data),
     })
   }
 }
