@@ -48,6 +48,7 @@ func main() {
 
 	// Public company routes (no auth required for signup)
 	router.GET("/api/companies", handlers.GetCompanies)
+	router.GET("/api/companies/:id", handlers.GetCompany)
 	router.POST("/api/companies", handlers.CreateCompany)
 
 	// Public referrers list (no auth required)
@@ -87,6 +88,29 @@ func main() {
 	{
 		rewards.GET("", handlers.GetRewards)
 		rewards.GET("/balance", handlers.GetRewardBalance)
+	}
+
+	// Job Openings routes
+	openings := router.Group("/api/openings")
+	{
+		// Public routes
+		openings.GET("", handlers.ListOpenings)
+		openings.GET("/:id", handlers.GetOpening)
+		
+		// Protected routes (auth required)
+		openings.POST("", middleware.AuthMiddleware(), handlers.CreateOpening)
+		openings.PUT("/:id", middleware.AuthMiddleware(), handlers.UpdateOpening)
+		openings.DELETE("/:id", middleware.AuthMiddleware(), handlers.DeleteOpening)
+		openings.GET("/my-postings", middleware.AuthMiddleware(), handlers.GetMyPostings)
+		
+		// Job seeker routes
+		openings.POST("/:id/request", middleware.AuthMiddleware(), handlers.RequestReferral)
+		openings.GET("/:id/my-request", middleware.AuthMiddleware(), handlers.GetMyRequest)
+		
+		// Referrer routes
+		openings.GET("/referral-opportunities", middleware.AuthMiddleware(), handlers.GetReferralOpportunities)
+		openings.POST("/:id/accept/:request_id", middleware.AuthMiddleware(), handlers.AcceptReferralRequest)
+		openings.POST("/:id/reject/:request_id", middleware.AuthMiddleware(), handlers.RejectReferralRequest)
 	}
 
 	// Admin routes (admin auth required)

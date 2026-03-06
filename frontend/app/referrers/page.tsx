@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { MobileNav } from "@/components/dashboard/mobile-nav"
 import { SidebarProvider, useSidebarState } from "@/components/dashboard/sidebar-context"
-import { Combobox, type ComboboxOption } from "@/components/ui/combobox"
+import { Combobox } from "@/components/ui/combobox"
 import { cn } from "@/lib/utils"
+import { useCompanyOptions } from "@/lib/hooks/use-company-options"
 
 interface Company {
   id: number
@@ -41,6 +42,13 @@ function ReferrersContent() {
   const [selectedCompany, setSelectedCompany] = useState<string>("")
   const [techStackFilter, setTechStackFilter] = useState("")
   const { collapsed } = useSidebarState()
+  const companyOptionsData = useCompanyOptions(companies, true)
+  const companyOptions = companyOptionsData.map(opt => ({
+    ...opt,
+    icon: opt.isAllOption
+      ? <Users className="h-3.5 w-3.5 text-muted-foreground" />
+      : <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+  }))
 
   useEffect(() => {
     loadCompanies()
@@ -207,25 +215,7 @@ function ReferrersContent() {
                 <div className="space-y-2">
                   <Label htmlFor="company" className="text-sm font-semibold">Company</Label>
                   <Combobox
-                    options={useMemo(() => {
-                      const opts: ComboboxOption[] = [
-                        {
-                          value: "",
-                          label: "All companies",
-                          icon: <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                        }
-                      ]
-                      if (companies && companies.length > 0) {
-                        companies.forEach(company => {
-                          opts.push({
-                            value: company.id.toString(),
-                            label: company.name,
-                            icon: <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                          })
-                        })
-                      }
-                      return opts
-                    }, [companies])}
+                    options={companyOptions}
                     value={selectedCompany}
                     onValueChange={setSelectedCompany}
                     placeholder={companies.length === 0 ? "Loading..." : "Select company..."}

@@ -62,6 +62,37 @@ class ApiClient {
     return response.json()
   }
 
+  // Generic HTTP methods
+  async get<T>(endpoint: string): Promise<{ data: T }> {
+    const result = await this.request<T>(endpoint, {
+      method: 'GET',
+    })
+    return { data: result }
+  }
+
+  async post<T>(endpoint: string, data?: any): Promise<{ data: T }> {
+    const result = await this.request<T>(endpoint, {
+      method: 'POST',
+      body: data ? JSON.stringify(data) : undefined,
+    })
+    return { data: result }
+  }
+
+  async put<T>(endpoint: string, data?: any): Promise<{ data: T }> {
+    const result = await this.request<T>(endpoint, {
+      method: 'PUT',
+      body: data ? JSON.stringify(data) : undefined,
+    })
+    return { data: result }
+  }
+
+  async delete<T>(endpoint: string): Promise<{ data: T }> {
+    const result = await this.request<T>(endpoint, {
+      method: 'DELETE',
+    })
+    return { data: result }
+  }
+
   // Auth endpoints
   async signup(data: {
     email: string
@@ -186,6 +217,17 @@ class ApiClient {
     }>('/companies', {
       method: 'POST',
       body: JSON.stringify(data),
+    })
+  }
+
+  async getCompany(id: number) {
+    return this.request<{
+      id: number
+      name: string
+      domain: string
+      website?: string
+    }>(`/companies/${id}`, {
+      method: 'GET',
     })
   }
 }

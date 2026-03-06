@@ -7,10 +7,10 @@ import { useAuth } from "@/lib/auth-context"
 export function DashboardHeader() {
   const { user } = useAuth()
   
-  const fullName = user ? `${user.firstName} ${user.lastName}` : "User"
-  const initials = user
+  const fullName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || "User" : "User"
+  const initials = user && user.firstName && user.lastName
     ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-    : "U"
+    : user?.firstName?.[0]?.toUpperCase() || user?.lastName?.[0]?.toUpperCase() || "U"
   const role = user?.role === "referrer" ? "Referrer" : "Job Seeker"
 
   return (

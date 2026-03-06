@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
@@ -14,34 +14,40 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react"
-import { useSidebarState } from "./sidebar-context"
-import { useAuth } from "@/lib/auth-context"
+  Briefcase,
+} from "lucide-react";
+import { useSidebarState } from "./sidebar-context";
+import { useAuth } from "@/lib/auth-context";
 
 const mainNav = [
-  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  {
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    href: "/dashboard",
+  },
+  { label: "Job Openings", icon: Briefcase, href: "/openings", active: false },
   { label: "Referrers", icon: Users, href: "/referrers" },
   { label: "Campaigns", icon: Link2, href: "/campaigns" },
   { label: "Analytics", icon: BarChart3, href: "/analytics" },
   { label: "Rewards", icon: Gift, href: "/rewards" },
-]
+];
 
 const bottomNav = [
   { label: "Settings", icon: Settings },
   { label: "Help Center", icon: HelpCircle },
-]
+];
 
 export function DashboardSidebar() {
-  const { collapsed, toggle } = useSidebarState()
-  const { logout } = useAuth()
-  const pathname = usePathname()
+  const { collapsed, toggle } = useSidebarState();
+  const { logout } = useAuth();
+  const pathname = usePathname();
 
   return (
     <aside
       className={cn(
         "fixed left-0 top-0 z-30 flex h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300",
         "max-md:hidden", // Hide on mobile by default
-        collapsed ? "w-[72px]" : "w-64"
+        collapsed ? "w-[72px]" : "w-64",
       )}
     >
       {/* Logo */}
@@ -60,23 +66,38 @@ export function DashboardSidebar() {
       <nav className="mt-4 flex-1 px-3">
         <ul className="flex flex-col gap-1">
           {mainNav.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href;
             return (
               <li key={item.label}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-sidebar-accent text-primary"
-                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                  )}
-                >
-                  <item.icon className="size-5 shrink-0" />
-                  {!collapsed && <span>{item.label}</span>}
-                </Link>
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      item.active
+                        ? "bg-sidebar-accent text-primary"
+                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                    )}
+                  >
+                    <item.icon className="size-5 shrink-0" />
+                    {!collapsed && <span>{item.label}</span>}
+                  </Link>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent text-primary"
+                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                    )}
+                  >
+                    <item.icon className="size-5 shrink-0" />
+                    {!collapsed && <span>{item.label}</span>}
+                  </Link>
+                )}
               </li>
-            )
+            );
           })}
         </ul>
       </nav>
@@ -118,5 +139,5 @@ export function DashboardSidebar() {
         )}
       </button>
     </aside>
-  )
+  );
 }

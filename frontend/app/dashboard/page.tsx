@@ -54,10 +54,8 @@ function DashboardContent() {
 
 export default function DashboardPage() {
   return (
-    <ProtectedRoute>
-      <SidebarProvider>
-        <DashboardContent />
-      </SidebarProvider>
-    </ProtectedRoute>
+    <SidebarProvider>
+      <DashboardContent />
+    </SidebarProvider>
   )
 }
