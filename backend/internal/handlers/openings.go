@@ -58,9 +58,21 @@ func CreateOpening(c *gin.Context) {
 		return
 	}
 
-	// Only referrers and admins can create openings
-	if user.Role != models.RoleReferrer && user.Role != models.RoleAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Only referrers and admins can post job openings"})
+	// Only referrers can create openings
+	if user.Role != models.RoleReferrer {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only referrers can post job openings"})
+		return
+	}
+
+	// Referrers must be associated with a company
+	if user.CompanyID == nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You must be associated with a company to post job openings"})
+		return
+	}
+
+	// Referrers can only post openings for their own company
+	if req.CompanyID != *user.CompanyID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only post job openings for your own company"})
 		return
 	}
 
@@ -82,16 +94,10 @@ func CreateOpening(c *gin.Context) {
 		expiresAt = &parsedTime
 	}
 
-	// Determine posted_by_type based on user role
-	postedByType := models.PostedByIndividual
-	if user.Role == models.RoleAdmin {
-		postedByType = models.PostedByAdmin
-	}
-
-	// Create job opening
+	// Create job opening (always posted by individual referrer)
 	opening := models.JobOpening{
 		PostedBy:        user.ID,
-		PostedByType:    postedByType,
+		PostedByType:    models.PostedByIndividual,
 		CompanyID:       req.CompanyID,
 		JobTitle:        req.JobTitle,
 		JobURL:          req.JobURL,
@@ -334,15 +340,10 @@ func RequestReferral(c *gin.Context) {
 
 	db := config.GetDB()
 
-	// Get user and verify role
+	// Get user
 	var user models.User
 	if err := db.First(&user, userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-
-	if user.Role != models.RoleJobSeeker {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Only job seekers can request referrals"})
 		return
 	}
 
@@ -353,6 +354,14 @@ func RequestReferral(c *gin.Context) {
 		First(&opening, openingID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Opening not found"})
 		return
+	}
+
+	// Prevent referrers from requesting referrals for their own company
+	if user.Role == models.RoleReferrer && user.CompanyID != nil {
+		if *user.CompanyID == opening.CompanyID {
+			c.JSON(http.StatusForbidden, gin.H{"error": "You cannot request a referral for your own company"})
+			return
+		}
 	}
 
 	// Check if opening is active

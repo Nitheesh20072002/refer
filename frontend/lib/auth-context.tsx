@@ -11,6 +11,7 @@ interface User {
   lastName: string
   role: 'job_seeker' | 'referrer'
   company?: string
+  company_id?: number
 }
 
 interface AuthContextType {
@@ -54,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               firstName: profile.first_name,
               lastName: profile.last_name,
               role: profile.role as 'job_seeker' | 'referrer',
+              company_id: profile.company_id,
             }
             setUser(validatedUser)
             localStorage.setItem('user', JSON.stringify(validatedUser))
@@ -90,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         firstName: response.user.first_name,
         lastName: response.user.last_name,
         role: response.user.role as 'job_seeker' | 'referrer',
+        company_id: response.user.company_id,
       }
 
       setUser(newUser)

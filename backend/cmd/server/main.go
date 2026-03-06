@@ -48,6 +48,7 @@ func main() {
 
 	// Public company routes (no auth required for signup)
 	router.GET("/api/companies", handlers.GetCompanies)
+	router.GET("/api/companies/:id", handlers.GetCompany)
 	router.POST("/api/companies", handlers.CreateCompany)
 
 	// Public referrers list (no auth required)

@@ -10,9 +10,10 @@ import { AlertCircle, ArrowRight, Mail, Lock, User, Loader2, Building2, CheckCir
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Combobox } from "@/components/ui/combobox"
 import { useAuth } from "@/lib/auth-context"
 import { apiClient } from "@/lib/api-client"
+import { useCompanyOptions } from "@/lib/hooks/use-company-options"
 
 interface Company {
   id: number
@@ -42,6 +43,11 @@ export default function SignupPage() {
   const [showAddCompany, setShowAddCompany] = useState(false)
   const [loadingCompanies, setLoadingCompanies] = useState(false)
   const { signup } = useAuth()
+  const companyOptionsData = useCompanyOptions(companies, false)
+  const companyOptions = companyOptionsData.map(opt => ({
+    ...opt,
+    icon: <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+  }))
 
   // Load companies when role changes to referrer
   useEffect(() => {
@@ -366,34 +372,15 @@ export default function SignupPage() {
                   
                   {!showAddCompany ? (
                     <div className="space-y-3">
-                      <div className="relative">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-                        <Select
-                          value={formData.companyId}
-                          onValueChange={(value) => handleInputChange("companyId", value)}
-                          disabled={loadingCompanies}
-                        >
-                          <SelectTrigger className="pl-10 h-11 w-full">
-                            <SelectValue placeholder={loadingCompanies ? "Loading companies..." : "Select your company"} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {companies.length === 0 ? (
-                              <div className="p-4 text-center text-sm text-muted-foreground">
-                                No companies found. Add yours below!
-                              </div>
-                            ) : (
-                              companies.map((company) => (
-                                <SelectItem key={company.id} value={company.id.toString()}>
-                                  <div className="flex items-center gap-2">
-                                    <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                                    {company.name}
-                                  </div>
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      <Combobox
+                        options={companyOptions}
+                        value={formData.companyId}
+                        onValueChange={(value) => handleInputChange("companyId", value)}
+                        placeholder={loadingCompanies ? "Loading companies..." : "Select your company"}
+                        searchPlaceholder="Search companies..."
+                        emptyText={loadingCompanies ? "Loading companies..." : "No companies found. Add yours below!"}
+                        className="h-11"
+                      />
                       
                       <div className="relative">
                         <div className="absolute inset-0 flex items-center">

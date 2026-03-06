@@ -277,7 +277,15 @@ export default function OpeningDetailPage() {
                 <Button
                   size="lg"
                   onClick={() => setShowReferralDialog(true)}
-                  disabled={opening.status !== 'active'}
+                  disabled={
+                    opening.status !== 'active' ||
+                    (user?.role === 'referrer' && user?.company_id === opening.company.id)
+                  }
+                  title={
+                    user?.role === 'referrer' && user?.company_id === opening.company.id
+                      ? 'You cannot request a referral for your own company'
+                      : undefined
+                  }
                 >
                   Request Referral
                 </Button>

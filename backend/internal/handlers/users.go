@@ -9,8 +9,24 @@ import (
 )
 
 func GetProfile(c *gin.Context) {
-	user, _ := c.Get("user")
-	c.JSON(http.StatusOK, user)
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found in context"})
+		return
+	}
+	
+	user := userInterface.(models.User)
+	
+	// Return user with all fields
+	c.JSON(http.StatusOK, gin.H{
+		"id": user.ID,
+		"email": user.Email,
+		"first_name": user.FirstName,
+		"last_name": user.LastName,
+		"role": user.Role,
+		"company_id": user.CompanyID,
+		"is_verified": user.IsVerified,
+	})
 }
 
 func UpdateProfile(c *gin.Context) {
@@ -71,6 +87,19 @@ func GetCompanies(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, companies)
+}
+
+func GetCompany(c *gin.Context) {
+	db := config.GetDB()
+	companyID := c.Param("id")
+
+	var company models.Company
+	if err := db.First(&company, companyID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Company not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, company)
 }
 
 // CreateCompany creates a new company (public endpoint for signup)
