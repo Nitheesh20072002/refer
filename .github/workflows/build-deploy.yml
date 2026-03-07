@@ -1,96 +1,84 @@
-
-name: Build Docker Images
+name: Build and Push Docker Images to GCR
 
 on:
   push:
     branches: [main, master, develop]
   workflow_dispatch:  # Allow manual trigger
 
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: ${{ secrets.GCP_REGION }}
+
 jobs:
   build-backend:
-    name: Build Backend Docker Image
+    name: Build and Push Backend to GCR
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'backend/') || github.event_name == 'workflow_dispatch'
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
         with:
-          images: referloop-backend
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build Backend Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: backend
-          push: false  # Set to true when you have a registry
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # Uncomment when you have a Docker registry
-      # - name: Login to Docker Registry
-      #   uses: docker/login-action@v3
-      #   with:
-      #     registry: your-registry.com
-      #     username: ${{ secrets.DOCKER_USERNAME }}
-      #     password: ${{ secrets.DOCKER_PASSWORD }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          export_default_credentials: true
       
-      # - name: Push to registry
-      #   run: docker push ${{ steps.meta.outputs.tags }}
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+      
+      - name: Build Backend Docker Image
+        run: |
+          cd backend
+          docker build -t gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:${{ github.sha }} .
+          docker tag gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:${{ github.sha }} gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:latest
+      
+      - name: Push Backend Images to GCR
+        run: |
+          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:${{ github.sha }}
+          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:latest
+      
+      - name: Output Backend Image URL
+        run: |
+          echo "✅ Backend image pushed to GCR:"
+          echo "gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:latest"
 
   build-frontend:
-    name: Build Frontend Docker Image
+    name: Build and Push Frontend to GCR
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.modified, 'frontend/') || github.event_name == 'workflow_dispatch'
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
         with:
-          images: referloop-frontend
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build Frontend Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: frontend
-          build-args: |
-            NEXT_PUBLIC_API_URL=/api
-          push: false  # Set to true when you have a registry
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      # Uncomment when you have a Docker registry
-      # - name: Login to Docker Registry
-      #   uses: docker/login-action@v3
-      #   with:
-      #     registry: your-registry.com
-      #     username: ${{ secrets.DOCKER_USERNAME }}
-      #     password: ${{ secrets.DOCKER_PASSWORD }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          export_default_credentials: true
       
-      # - name: Push to registry
-      #   run: docker push ${{ steps.meta.outputs.tags }}
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+      
+      - name: Build Frontend Docker Image
+        run: |
+          cd frontend
+          docker build \
+            --build-arg NEXT_PUBLIC_API_URL=/api \
+            -t gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:${{ github.sha }} .
+          docker tag gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:${{ github.sha }} gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:latest
+      
+      - name: Push Frontend Images to GCR
+        run: |
+          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:${{ github.sha }}
+          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:latest
+      
+      - name: Output Frontend Image URL
+        run: |
+          echo "✅ Frontend image pushed to GCR:"
+          echo "gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:latest"
+          echo ""
+          echo "⚠️  Note: After deploying backend, update this workflow with:"
+          echo "NEXT_PUBLIC_API_URL=https://your-backend-url.run.app"
