@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"backend/internal/config"
 	"backend/internal/handlers"
@@ -21,8 +22,12 @@ func main() {
 		log.Fatal("Failed to initialize database")
 	}
 
-	// Set Gin mode
-	gin.SetMode(gin.DebugMode)
+	// Set Gin mode from environment
+	ginMode := os.Getenv("GIN_MODE")
+	if ginMode == "" {
+		ginMode = gin.DebugMode
+	}
+	gin.SetMode(ginMode)
 
 	// Create router
 	router := gin.Default()
@@ -96,17 +101,17 @@ func main() {
 		// Public routes
 		openings.GET("", handlers.ListOpenings)
 		openings.GET("/:id", handlers.GetOpening)
-		
+
 		// Protected routes (auth required)
 		openings.POST("", middleware.AuthMiddleware(), handlers.CreateOpening)
 		openings.PUT("/:id", middleware.AuthMiddleware(), handlers.UpdateOpening)
 		openings.DELETE("/:id", middleware.AuthMiddleware(), handlers.DeleteOpening)
 		openings.GET("/my-postings", middleware.AuthMiddleware(), handlers.GetMyPostings)
-		
+
 		// Job seeker routes
 		openings.POST("/:id/request", middleware.AuthMiddleware(), handlers.RequestReferral)
 		openings.GET("/:id/my-request", middleware.AuthMiddleware(), handlers.GetMyRequest)
-		
+
 		// Referrer routes
 		openings.GET("/referral-opportunities", middleware.AuthMiddleware(), handlers.GetReferralOpportunities)
 		openings.POST("/:id/accept/:request_id", middleware.AuthMiddleware(), handlers.AcceptReferralRequest)
@@ -122,9 +127,13 @@ func main() {
 		admin.PUT("/verify-referral/:id", handlers.AdminVerifyReferral)
 	}
 
-	// Start server
-	port := "8000"
-	fmt.Printf("🚀 Server running on http://localhost:%s\n", port)
+	// Start server - read PORT from environment (required for Cloud Run)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000" // Default for local development
+	}
+
+	fmt.Printf("🚀 Server running on port %s\n", port)
 	if err := router.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
