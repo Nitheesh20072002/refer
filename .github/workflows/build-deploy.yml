@@ -72,7 +72,7 @@ jobs:
         run: |
           cd frontend
           docker build \
-            --build-arg NEXT_PUBLIC_API_URL=https://referloop-backend-152057282890.asia-southeast1.run.app \
+            --build-arg NEXT_PUBLIC_API_URL=https://referloop-backend-152057282890.asia-southeast1.run.app/api \
             -t ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/frontend:${{ github.sha }} .
           docker tag ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/frontend:${{ github.sha }} ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/frontend:latest
 
@@ -87,4 +87,4 @@ jobs:
           echo "${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/frontend:latest"
           echo ""
           echo "✅ Frontend configured with backend URL:"
-          echo "NEXT_PUBLIC_API_URL=https://referloop-backend-152057282890.asia-southeast1.run.app"
+          echo "NEXT_PUBLIC_API_URL=https://referloop-backend-152057282890.asia-southeast1.run.app/api"
