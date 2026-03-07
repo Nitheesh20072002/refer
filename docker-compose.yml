@@ -65,11 +65,12 @@ services:
     deploy:
       resources:
         limits:
-          memory: 3G
+          memory: 4G  # Increased for Next.js build
         reservations:
-          memory: 1G
+          memory: 2G
     networks:
       - referloop-network
+    shm_size: '2gb'  # Increase shared memory
 
   pgweb:
     image: sosedoff/pgweb:latest

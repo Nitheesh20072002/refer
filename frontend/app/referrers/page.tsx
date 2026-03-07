@@ -60,14 +60,13 @@ function ReferrersContent() {
   }, [searchTerm, selectedCompany, techStackFilter])
 
   const getApiUrl = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-    // Remove trailing /api if present to avoid double /api
-    return baseUrl.replace(/\/api\/?$/, '')
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+    return baseUrl
   }
 
   const loadCompanies = async () => {
     try {
-      const url = `${getApiUrl()}/api/companies`
+      const url = `${getApiUrl()}/companies`
       console.log("Fetching companies from:", url) // Debug log
       const response = await fetch(url)
       if (!response.ok) {
@@ -87,16 +86,25 @@ function ReferrersContent() {
     try {
       const params = new URLSearchParams()
       if (searchTerm) params.append("search", searchTerm)
-      if (selectedCompany) params.append("company_id", selectedCompany)
+      if (selectedCompany && selectedCompany !== "all") params.append("company_id", selectedCompany)
       if (techStackFilter) params.append("tech_stack", techStackFilter)
 
-      const url = `${getApiUrl()}/api/referrers?${params.toString()}`
+      const url = `${getApiUrl()}/referrers?${params.toString()}`
       console.log("Fetching referrers from:", url) // Debug log
       const response = await fetch(url)
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }))
+        console.error("API Error:", response.status, errorData)
+        throw new Error(errorData.error || `HTTP ${response.status}`)
+      }
+      
       const data = await response.json()
-      setReferrers(data)
+      console.log("Fetched referrers:", data) // Debug log
+      setReferrers(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error("Failed to load referrers:", error)
+      setReferrers([]) // Set empty array on error to prevent crashes
     } finally {
       setLoading(false)
     }

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"backend/internal/config"
@@ -148,8 +149,8 @@ func GetReferrers(c *gin.Context) {
 	companyID := c.Query("company_id") // Filter by company
 	techStack := c.Query("tech_stack") // Filter by tech stack
 
-	// Start building query
-	query := db.Where("role = ?", "referrer").Preload("Company")
+	// Start building query - don't use Select with Preload as it causes issues
+	query := db.Model(&models.User{}).Where("role = ?", "referrer")
 
 	// Apply filters
 	if search != "" {
@@ -170,9 +171,9 @@ func GetReferrers(c *gin.Context) {
 
 	// Fetch referrers
 	var referrers []models.User
-	if err := query.Select("id", "first_name", "last_name", "company_id", "tech_stack", "linkedin", "github", "reward_points").
-		Order("first_name ASC").
-		Find(&referrers).Error; err != nil {
+	if err := query.Preload("Company").Order("first_name ASC").Find(&referrers).Error; err != nil {
+		// Log the actual error for debugging
+		fmt.Printf("Error fetching referrers: %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch referrers"})
 		return
 	}
