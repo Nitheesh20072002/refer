@@ -18,9 +18,10 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 # Disable telemetry for faster builds
 ENV NEXT_TELEMETRY_DISABLED 1
 
-# Set Node.js memory limit to prevent OOM during build
-ENV NODE_OPTIONS="--max-old-space-size=2048"
+# Set Node.js memory limit - increased to 3GB for Next.js 16
+ENV NODE_OPTIONS="--max-old-space-size=3072"
 
+# Build with more aggressive memory management
 RUN npm run build
 
 # -------- Stage 3: Runner --------
