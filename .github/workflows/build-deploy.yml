@@ -25,24 +25,24 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           export_default_credentials: true
       
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
       
       - name: Build Backend Docker Image
         run: |
           cd backend
-          docker build -t gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:${{ github.sha }} .
-          docker tag gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:${{ github.sha }} gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:latest
+          docker build -t ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/backend:${{ github.sha }} .
+          docker tag ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/backend:${{ github.sha }} ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/backend:latest
       
-      - name: Push Backend Images to GCR
+      - name: Push Backend Images to Artifact Registry
         run: |
-          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:${{ github.sha }}
-          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:latest
+          docker push ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/backend:${{ github.sha }}
+          docker push ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/backend:latest
       
       - name: Output Backend Image URL
         run: |
-          echo "✅ Backend image pushed to GCR:"
-          echo "gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-backend:latest"
+          echo "✅ Backend image pushed to Artifact Registry:"
+          echo "${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/backend:latest"
 
   build-frontend:
     name: Build and Push Frontend to GCR
@@ -59,26 +59,26 @@ jobs:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           export_default_credentials: true
       
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.GCP_REGION }}-docker.pkg.dev
       
       - name: Build Frontend Docker Image
         run: |
           cd frontend
           docker build \
             --build-arg NEXT_PUBLIC_API_URL=/api \
-            -t gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:${{ github.sha }} .
-          docker tag gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:${{ github.sha }} gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:latest
+            -t ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/frontend:${{ github.sha }} .
+          docker tag ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/frontend:${{ github.sha }} ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/frontend:latest
       
-      - name: Push Frontend Images to GCR
+      - name: Push Frontend Images to Artifact Registry
         run: |
-          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:${{ github.sha }}
-          docker push gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:latest
+          docker push ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/frontend:${{ github.sha }}
+          docker push ${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/frontend:latest
       
       - name: Output Frontend Image URL
         run: |
-          echo "✅ Frontend image pushed to GCR:"
-          echo "gcr.io/${{ env.GCP_PROJECT_ID }}/referloop-frontend:latest"
+          echo "✅ Frontend image pushed to Artifact Registry:"
+          echo "${{ env.GCP_REGION }}-docker.pkg.dev/${{ env.GCP_PROJECT_ID }}/referloop/frontend:latest"
           echo ""
           echo "⚠️  Note: After deploying backend, update this workflow with:"
           echo "NEXT_PUBLIC_API_URL=https://your-backend-url.run.app"
